@@ -55,3 +55,37 @@ crashes %>%
   theme_modern_rc()
 ```
 
+Peter wanted numbers for Sun Prairie. The numbers are too low. So let's do fatal and serious injuries.
+
+```{r}
+download.file("https://CommunityMaps.wi.gov/crash/public/crashesKML.do?filetype=json&startyear=2000&en
+dyear=2021&injsvr=K&injsvr=A&county=dane", "deadly_and_serious.json")
+```
+
+```{r}
+df <- st_read("deadly_and_serious.json")
+
+dead_severe <- df %>% 
+  mutate(date = mdy(date),
+         totfatl = as.numeric(totfatl),
+         totinj = as.numeric(totinj))
+
+dead_severe %>% 
+  filter(muniname == "SUN PRAIRIE") %>% 
+  group_by(year = year(date)) %>% 
+  summarize(fatalities = sum(totfatl),
+            injuries = sum(totinj),
+            fat_inj = fatalities + injuries) %>% 
+  ggplot(aes(year, fat_inj)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Traffic fatalities and severe injuries in Sun Prairie, 2001–2021",
+       caption = "Data: Community Maps. https://CommunityMaps.wi.gov/") +
+  xlab(element_blank()) +
+  ylab("Number of fatalities and severe injuries") +
+  geom_text(aes(label = fat_inj), nudge_y = 2) +
+  theme_modern_rc()
+
+
+```
+
