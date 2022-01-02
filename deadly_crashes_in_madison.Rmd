@@ -89,3 +89,90 @@ dead_severe %>%
 
 ```
 
+# Milwaukee
+```{r}
+download.file("https://CommunityMaps.wi.gov/crash/public/crashesKML.do?filetype=json&startyear=2000&en
+dyear=2021&injsvr=K&county=milwaukee", "deadly_MKE.json")
+```
+
+
+```{r}
+df <- st_read("deadly_MKE.json")
+
+mke <- df %>% 
+  mutate(date = mdy(date),
+         totfatl = as.numeric(totfatl))
+
+tmap_mode("view")
+
+mke %>% 
+  filter(muniname == "MILWAUKEE") %>% 
+  filter(year(date)>2020) %>% 
+  mutate(fat_plot = totfatl/500) %>% 
+tm_shape() +
+  tm_dots()
+```
+
+```{r}
+mke %>% 
+  #filter(muniname == "MILWAUKEE") %>% 
+  group_by(year = year(date)) %>% 
+  summarize(fatalities = sum(totfatl)) %>% 
+  ggplot(aes(year, fatalities)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Traffic fatalities in Milwaukee County, 2001–2021",
+       caption = "Data: Community Maps. https://CommunityMaps.wi.gov/") +
+  xlab(element_blank()) +
+  geom_text(aes(label = fatalities), nudge_y = 7) +
+  theme_modern_rc() +
+  ylim(0,110)
+```
+
+Given the attention reckless driving has received in the past few months, I was surprised that the overall number of fatalities in 2021 was somewhat in line with recent years and much lower than 2020. Quick check what happens when we include severe injuries.
+
+```{r}
+download.file("https://CommunityMaps.wi.gov/crash/public/crashesKML.do?filetype=json&startyear=2000&en
+dyear=2021&injsvr=K&injsvr=A&county=milwaukee", "deadly_inj_MKE.json")
+```
+
+```{r}
+df <- st_read("deadly_inj_MKE.json")
+
+dead_severe <- df %>% 
+  mutate(date = mdy(date),
+         totfatl = as.numeric(totfatl),
+         totinj = as.numeric(totinj)) %>% 
+  pivot_longer(any_of(c("totfatl", "totinj")), names_to = "variable", values_to = "number")
+
+dead_severe %>% 
+  #filter(muniname == "MILWAUKEE") %>% 
+  group_by(year = year(date), variable) %>% 
+  filter(year >2009) %>% 
+  summarize(total = sum(number), .groups = "keep") %>% 
+  ggplot(aes(year, total, fill = variable)) +
+  geom_col() +
+  scale_fill_ft(name = element_blank(), labels = c("Fatalities", "Severe injuries")) +
+  labs(title = "Traffic fatalities and severe injuries \nin Milwaukee County, 2010–2021",
+       caption = "Data: Community Maps. https://CommunityMaps.wi.gov/") +
+  xlab(element_blank()) +
+  ylab("Number of fatalities and severe injuries") +
+  #geom_text(aes(label = fat_inj), nudge_y = 2) +
+  theme_modern_rc()
+
+
+
+```
+Based on Twitter discussion, I found out that crash reporting changed in 2017 and so comparisons of injury data over time are problematic.
+
+```{r}
+df %>% 
+  mutate(date = mdy(date),
+         totfatl = as.numeric(totfatl),
+         totinj = as.numeric(totinj)) %>%
+  pivot_longer(any_of(c("totfatl", "totinj")), names_to = "variable", values_to = "number") %>%
+  class()
+  tm_shape()+
+  tm_dots()
+```
+
