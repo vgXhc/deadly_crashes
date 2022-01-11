@@ -17,7 +17,7 @@ library(tmap)
 library(lubridate)
 library(hrbrthemes)
 ```
-
+# Madison
 ```{r}
 download.file("https://CommunityMaps.wi.gov/crash/public/crashesKML.do?filetype=json&startyear=2000&en
 dyear=2021&injsvr=K&county=dane", "test.json")
@@ -55,6 +55,58 @@ crashes %>%
   theme_modern_rc()
 ```
 
+
+## Fatalities and severe injuries
+For comment at TPPB on Vision Zero action plan, I need fatalities K and serious injuries A for Madison
+
+```{r}
+
+
+
+download.file("https://CommunityMaps.wi.gov/crash/public/crashesKML.do?filetype=json&startyear=2000&en
+dyear=2021&injsvr=K&injsvr=A&county=dane", "test.json")
+
+df <- st_read("test.json")
+
+madison_KA <- df %>% 
+  filter(muniname == "MADISON") %>% 
+  mutate(date = mdy(date),
+         totfatl = as.numeric(totfatl))
+
+madison_KA %>% 
+  st_drop_geometry() %>% 
+group_by(yr = year(date), injsvr) %>% 
+  summarize(n()) %>% 
+  view()
+
+tmap_mode("view")
+
+crashes %>% 
+  filter(muniname == "MADISON") %>% 
+  filter(year(date)>2020) %>% 
+  mutate(fat_plot = totfatl/500) %>% 
+tm_shape() +
+  tm_dots()
+```
+
+```{r}
+crashes %>% 
+  filter(muniname == "MADISON") %>% 
+  group_by(year = year(date)) %>% 
+  summarize(fatalities = sum(totfatl)) %>% 
+  ggplot(aes(year, fatalities)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title = "Traffic fatalities in Madison, 2001–2021",
+       caption = "Data: Community Maps. https://CommunityMaps.wi.gov/") +
+  xlab(element_blank()) +
+  geom_vline(aes(xintercept = decimal_date(date("2019-07-14"))+1), color = "white") +
+  geom_text(aes(label = fatalities), nudge_y = 1) +
+  geom_text(aes(x = decimal_date(date("2019-07-14")), label = "Madison adopts\n Vision Zero", y = 5)) +
+  theme_modern_rc()
+```
+
+# Sun Prairie
 Peter wanted numbers for Sun Prairie. The numbers are too low. So let's do fatal and serious injuries.
 
 ```{r}
